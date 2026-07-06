@@ -1,0 +1,19 @@
+# Driftwatch Stream configuration. Every key has a default in driftwatch/config.py.
+kafka:
+  bootstrap: localhost:9092
+  input_topic: predictions
+  alert_topic: drift.alerts
+  group_id: driftwatch
+
+drift:
+  # Events kept per model before a verdict is computed.
+  window_size: 5000
+  # Events needed before the first verdict, so a cold window does not alert.
+  min_samples: 500
+  psi_threshold: 0.2
+  ks_threshold: 0.1
+  # Seconds before the same model and feature can alert again.
+  cooldown_seconds: 900
+
+store:
+  reference_dir: ./profiles
