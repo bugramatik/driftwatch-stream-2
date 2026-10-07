@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Driftwatch Stream</title>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --panel: #ffffff;
+    --ink: #1c2430;
+    --muted: #6b7684;
+    --line: #e3e7ec;
+    --accent: #2f6feb;
+    --accent-soft: #e8f0fe;
+    --warn: #b45309;
+    --warn-soft: #fdf1e3;
+    --ok: #1f7a4d;
+    --ok-soft: #e6f4ec;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.45;
+  }
+  header.topbar {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    height: 56px;
+    padding: 0 24px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+  }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 15px; }
+  .brand .mark {
+    width: 22px; height: 22px; border-radius: 6px;
+    background: var(--accent);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 12px; font-weight: 700;
+  }
+  nav { display: flex; gap: 4px; }
+  nav a {
+    color: var(--muted); text-decoration: none; padding: 6px 10px; border-radius: 6px; font-size: 13px;
+  }
+  nav a.active { color: var(--accent); background: var(--accent-soft); font-weight: 600; }
+  .topbar .spacer { flex: 1; }
+  .live { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 12px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
+  main { padding: 20px 24px 32px; max-width: 1280px; margin: 0 auto; }
+  h1 { font-size: 18px; margin: 0 0 2px; font-weight: 600; }
+  .sub { color: var(--muted); font-size: 13px; margin-bottom: 18px; }
+  .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; }
+  .card {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px;
+  }
+  .card .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+  .card .value { font-size: 24px; font-weight: 600; margin-top: 6px; }
+  .card .note { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .grid { display: grid; grid-template-columns: 1.55fr 1fr; gap: 14px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px;
+  }
+  .panel h2 { font-size: 13px; margin: 0 0 12px; font-weight: 600; }
+  .panel h2 span { color: var(--muted); font-weight: 400; margin-left: 6px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; color: var(--muted); font-weight: 500; font-size: 12px; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+  td { padding: 8px; border-bottom: 1px solid var(--line); }
+  tr:last-child td { border-bottom: none; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+  .pill.drift { background: var(--warn-soft); color: var(--warn); }
+  .pill.ok { background: var(--ok-soft); color: var(--ok); }
+  .bar { height: 6px; border-radius: 3px; background: #eef1f5; overflow: hidden; }
+  .bar > i { display: block; height: 100%; background: var(--accent); }
+  .bar > i.hot { background: var(--warn); }
+  .alerts { list-style: none; margin: 0; padding: 0; }
+  .alerts li { padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .alerts li:last-child { border-bottom: none; }
+  .alerts .who { font-weight: 600; font-size: 13px; }
+  .alerts .what { color: var(--muted); font-size: 12px; }
+  .alerts .when { color: var(--muted); font-size: 11px; margin-top: 2px; }
+  .chart-wrap { margin-top: 4px; }
+  .legend { display: flex; gap: 16px; color: var(--muted); font-size: 12px; margin-top: 8px; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+  footer { color: var(--muted); font-size: 12px; margin-top: 18px; }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="mark">DW</span> Driftwatch Stream</div>
+  <nav>
+    <a href="#" class="active">Overview</a>
+    <a href="#">Models</a>
+    <a href="#">Alerts</a>
+    <a href="#">Profiles</a>
+  </nav>
+  <div class="spacer"></div>
+  <div class="live"><span class="dot"></span> consumer lag 412 msgs</div>
+</header>
+
+<main>
+  <h1>Drift overview</h1>
+  <div class="sub">Live verdicts from the feature and prediction stream, last 15 minutes.</div>
+
+  <section class="cards">
+    <div class="card">
+      <div class="label">Throughput</div>
+      <div class="value">1.4M</div>
+      <div class="note">events/min on three brokers</div>
+    </div>
+    <div class="card">
+      <div class="label">Verdict latency</div>
+      <div class="value">38 ms</div>
+      <div class="note">p95, prediction to verdict</div>
+    </div>
+    <div class="card">
+      <div class="label">Largest shift</div>
+      <div class="value">0.11</div>
+      <div class="note">PSI on the bad deploy replay</div>
+    </div>
+    <div class="card">
+      <div class="label">Caught early</div>
+      <div class="value">6 of 7</div>
+      <div class="note">drifted features before cooldown</div>
+    </div>
+  </section>
+
+  <div class="grid">
+    <section class="panel">
+      <h2>Feature drift <span>churn-model v14, window of 5,000 events</span></h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th class="num">PSI</th>
+            <th class="num">KS</th>
+            <th style="width: 30%">Shift</th>
+            <th>Verdict</th>
+          </tr>
+        </thead>
+        <tbody id="feature-rows"></tbody>
+      </table>
+      <div class="chart-wrap">
+        <svg id="psi-chart" viewBox="0 0 640 150" width="100%" height="150" role="img" aria-label="PSI per feature over the last twelve windows"></svg>
+        <div class="legend">
+          <span><i style="background:#2f6feb"></i>PSI per window</span>
+          <span><i style="background:#b45309"></i>threshold 0.10</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Recent alerts</h2>
+      <ul class="alerts" id="alert-list"></ul>
+    </section>
+  </div>
+
+  <footer>Reference profiles rebuilt by the Spark job at 02:10 UTC. Alert cooldown 900 s per feature.</footer>
+</main>
