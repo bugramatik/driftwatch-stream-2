@@ -162,3 +162,86 @@
 
   <footer>Reference profiles rebuilt by the Spark job at 02:10 UTC. Alert cooldown 900 s per feature.</footer>
 </main>
+
+<script>
+  const features = [
+    { name: "account_age_days", psi: 0.112, ks: 0.184, drifted: true },
+    { name: "txn_count_7d", psi: 0.094, ks: 0.151, drifted: true },
+    { name: "avg_ticket", psi: 0.061, ks: 0.097, drifted: false },
+    { name: "country_risk", psi: 0.048, ks: 0.072, drifted: false },
+    { name: "device_trust", psi: 0.033, ks: 0.055, drifted: false },
+    { name: "session_minutes", psi: 0.021, ks: 0.041, drifted: false },
+    { name: "support_tickets", psi: 0.014, ks: 0.028, drifted: false }
+  ];
+
+  const alerts = [
+    { model: "churn-model v14", what: "account_age_days PSI 0.112 above 0.10", when: "2 min ago" },
+    { model: "churn-model v14", what: "txn_count_7d KS 0.151 above 0.14", when: "6 min ago" },
+    { model: "fraud-score v9", what: "amount_bucket PSI 0.087, below threshold", when: "11 min ago" },
+    { model: "churn-model v14", what: "cooldown active for account_age_days, repeat suppressed", when: "13 min ago" },
+    { model: "lead-rank v3", what: "reference profile rebuilt from 1.2M rows", when: "02:10 UTC" }
+  ];
+
+  const history = [0.012, 0.018, 0.021, 0.019, 0.026, 0.031, 0.029, 0.044, 0.058, 0.071, 0.096, 0.112];
+  const threshold = 0.10;
+
+  function renderRows() {
+    const body = document.getElementById("feature-rows");
+    const max = Math.max(...features.map(f => f.psi));
+    body.innerHTML = features.map(f => {
+      const width = Math.max(4, Math.round((f.psi / max) * 100));
+      const cls = f.drifted ? "hot" : "";
+      const pill = f.drifted
+        ? '<span class="pill drift">drifted</span>'
+        : '<span class="pill ok">stable</span>';
+      return `<tr>
+        <td>${f.name}</td>
+        <td class="num">${f.psi.toFixed(3)}</td>
+        <td class="num">${f.ks.toFixed(3)}</td>
+        <td><div class="bar"><i class="${cls}" style="width:${width}%"></i></div></td>
+        <td>${pill}</td>
+      </tr>`;
+    }).join("");
+  }
+
+  function renderAlerts() {
+    const list = document.getElementById("alert-list");
+    list.innerHTML = alerts.map(a => `<li>
+      <div class="who">${a.model}</div>
+      <div class="what">${a.what}</div>
+      <div class="when">${a.when}</div>
+    </li>`).join("");
+  }
+
+  function renderChart() {
+    const svg = document.getElementById("psi-chart");
+    const w = 640, h = 150, padL = 34, padB = 18, padT = 10;
+    const plotW = w - padL - 8, plotH = h - padB - padT;
+    const maxY = 0.12;
+    const x = i => padL + (plotW * i) / (history.length - 1);
+    const y = v => padT + plotH - (v / maxY) * plotH;
+    let out = "";
+    for (let g = 0; g <= 3; g++) {
+      const val = (maxY / 3) * g;
+      const gy = y(val);
+      out += `<line x1="${padL}" y1="${gy}" x2="${w - 8}" y2="${gy}" stroke="#eef1f5" stroke-width="1"/>`;
+      out += `<text x="${padL - 6}" y="${gy + 3}" text-anchor="end" font-size="9" fill="#6b7684">${val.toFixed(2)}</text>`;
+    }
+    const ty = y(threshold);
+    out += `<line x1="${padL}" y1="${ty}" x2="${w - 8}" y2="${ty}" stroke="#b45309" stroke-width="1" stroke-dasharray="4 3"/>`;
+    const pts = history.map((v, i) => `${x(i)},${y(v)}`).join(" ");
+    out += `<polyline points="${pts}" fill="none" stroke="#2f6feb" stroke-width="2"/>`;
+    history.forEach((v, i) => {
+      out += `<circle cx="${x(i)}" cy="${y(v)}" r="2.5" fill="#2f6feb"/>`;
+    });
+    out += `<text x="${padL}" y="${h - 4}" font-size="9" fill="#6b7684">12 windows ago</text>`;
+    out += `<text x="${w - 8}" y="${h - 4}" text-anchor="end" font-size="9" fill="#6b7684">now</text>`;
+    svg.innerHTML = out;
+  }
+
+  renderRows();
+  renderAlerts();
+  renderChart();
+</script>
+</body>
+</html>
